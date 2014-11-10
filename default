@@ -1,0 +1,51 @@
+server {
+    listen       80;
+    server_name  _;
+    root   /usr/share/nginx/html;
+
+    #charset koi8-r;
+    #access_log  /var/log/nginx/log/host.access.log  main;
+
+    location / {
+        index  index.php;
+    }
+
+    log_not_found off;
+
+    if ($host ~* ^www\.(.*))
+    {
+        set $host_without_www $1;
+        rewrite ^/(.*)$ $scheme://$host_without_www/$1 permanent;
+    }
+
+    if (!-e $request_filename)
+    {
+        rewrite ^(.+)$ /index.php?q=$1 last;
+    }
+
+#    error_page   500 502 503 504  /50x.html;
+#    location = /50x.html {
+#        root   /usr/share/nginx/www;
+#    }
+
+    location  ~ [^/]\.php(/|$) {
+            fastcgi_buffer_size 128k;
+            fastcgi_buffers 256 16k;
+            fastcgi_busy_buffers_size 256k;
+            fastcgi_temp_file_write_size 256k;
+            fastcgi_read_timeout 240;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass unix:/var/run/php5-fpm.sock;
+            fastcgi_index index.php;
+            if (!-f $document_root$fastcgi_script_name) {
+                return 404;
+            }
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny  all;
+    }
+}
+
